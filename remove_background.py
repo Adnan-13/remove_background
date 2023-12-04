@@ -12,12 +12,21 @@ def remove_green_background(frame):
 
     # Create a mask using the inRange function
     mask = cv2.inRange(hsv, lower_green, upper_green)
-
+    
+    # smooth the mask to reduce noise
+    mask = cv2.erode(mask, None, iterations=2)
+    mask = cv2.dilate(mask, None, iterations=2)
+    
+    # apply median blur to mask
+    mask = cv2.medianBlur(mask, 5)
+    
     # Invert the mask so that the background is black
     mask_inv = cv2.bitwise_not(mask)
 
     # Use the mask to extract the foreground
     result = cv2.bitwise_and(frame, frame, mask=mask_inv)
+    
+
 
     return result, mask
 
@@ -61,8 +70,19 @@ def process_video(input_video, output_video, background_video):
         bg_frame_masked = cv2.bitwise_and(bg_frame, bg_frame, mask=mask)
 
         # Merge the processed frame and the masked background video
-        result_frame = cv2.add(processed_frame, bg_frame_masked)
-
+        # result_frame = cv2.add(processed_frame, bg_frame_masked)
+        result_frame = processed_frame + bg_frame_masked
+        
+        # ## use edge detection to apply anti-aliasing
+        # edges = cv2.Canny(mask, 100, 200)
+        
+        # # blur the edges with respect to the mask
+        # edges = cv2.GaussianBlur(edges, (3,3), 0)
+        
+        # # apply the edges as a mask to the result frame
+        # result_frame = cv2.bitwise_and(result_frame, result_frame, mask=edges)
+        
+        # Write the processed frame to the output video file        
         out.write(result_frame)
 
     # Release video capture and writer objects
